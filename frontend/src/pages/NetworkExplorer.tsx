@@ -586,12 +586,13 @@ export function NetworkExplorer() {
   }, [hitTest]);
 
   const onMouseUp = useCallback(() => {
-    if (dragNode.current) {
+    const clickedNode = dragNode.current;
+    if (clickedNode) {
       // If we barely moved, treat it as a click on the node
       if (!didPan.current) {
-        setSelectedNode(prev => prev?.id === dragNode.current!.id ? null : dragNode.current);
+        setSelectedNode(prev => prev?.id === clickedNode.id ? null : clickedNode);
       }
-      dragNode.current.pinned = false;
+      clickedNode.pinned = false;
       dragNode.current = null;
     } else if (!didPan.current) {
       // Clicked on empty space — deselect
