@@ -156,17 +156,21 @@ export function Login() {
         ))}
       </div>
 
-      {/* Earth Background Layer with Spin and Zoom transitions */}
+      {/* Earth Background Layer with Spin, Zoom, and delayed Fade transitions */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-[2200ms] ease-in-out pointer-events-none"
+        className="absolute inset-0 z-0 bg-cover bg-center pointer-events-none"
         style={{
           backgroundImage: "radial-gradient(circle at center, rgba(10, 15, 30, 0.1) 0%, rgba(2, 4, 12, 0.95) 100%), url('/earthBg.jpg')",
           transform: isAuthenticating 
-            ? "scale(2.2) rotate(120deg)" 
+            ? "scale(2.2) rotate(180deg)" 
             : "scale(1.0) rotate(0deg)",
+          opacity: isAuthenticating ? 0 : 1,
           filter: isAuthenticating 
             ? "brightness(1.4) contrast(1.1)" 
             : "brightness(1.0) contrast(1.0)",
+          transition: isAuthenticating
+            ? "transform 2200ms ease-in-out, filter 2200ms ease-in-out, opacity 1000ms ease-in-out 1200ms"
+            : "transform 1000ms ease-in-out, filter 1000ms ease-in-out, opacity 1000ms ease-in-out",
         }}
       />
 
