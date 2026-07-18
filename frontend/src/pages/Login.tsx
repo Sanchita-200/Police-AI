@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Brain,
@@ -34,6 +34,18 @@ export function Login() {
   // Animation Refs
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const angleOffsetRef = useRef(0);
+
+  // Generate random twinkling stars
+  const stars = useMemo(() => {
+    return Array.from({ length: 80 }).map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      size: Math.random() * 1.5 + 1.2, // Between 1.2px and 2.7px
+      delay: `${Math.random() * 6}s`,
+      duration: `${3 + Math.random() * 5}s`,
+    }));
+  }, []);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +136,33 @@ export function Login() {
         backgroundPosition: "center",
       }}
     >
+      {/* Inject Twinkle Keyframes */}
+      <style>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.15; transform: scale(0.7); }
+          50% { opacity: 0.95; transform: scale(1.35); }
+        }
+      `}</style>
+
+      {/* Twinkling Stars Background Layer */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {stars.map((star) => (
+          <div
+            key={star.id}
+            className="absolute bg-white rounded-full opacity-[0.25]"
+            style={{
+              top: star.top,
+              left: star.left,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              boxShadow: "0 0 5px rgba(255, 255, 255, 0.8)",
+              animation: `twinkle ${star.duration} infinite ease-in-out`,
+              animationDelay: star.delay,
+            }}
+          />
+        ))}
+      </div>
+
       {/* HUD Grid Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#00d9ff03_1px,transparent_1px),linear-gradient(to_bottom,#00d9ff03_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none z-0" />
 
