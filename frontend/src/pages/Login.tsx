@@ -55,7 +55,7 @@ export function Login() {
     setTimeout(() => {
       setIsAuthenticating(false);
       navigate("/dashboard");
-    }, 1500);
+    }, 2200); // 2.2s allows the Earth spin & zoom animation to complete
   }, [badgeId, passcode, navigate]);
 
   // Capabilities with dual-line text matching the mock
@@ -128,14 +128,7 @@ export function Login() {
   }, []);
 
   return (
-    <div 
-      className="relative w-full min-h-screen bg-black overflow-hidden flex items-center justify-center p-4 font-mono select-none"
-      style={{
-        backgroundImage: "radial-gradient(circle at center, rgba(10, 15, 30, 0.3) 0%, rgba(2, 4, 12, 0.95) 100%), url('/earthBg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="relative w-full min-h-screen bg-black overflow-hidden flex items-center justify-center p-4 font-mono select-none">
       {/* Inject Twinkle Keyframes */}
       <style>{`
         @keyframes twinkle {
@@ -163,11 +156,25 @@ export function Login() {
         ))}
       </div>
 
+      {/* Earth Background Layer with Spin and Zoom transitions */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-[2200ms] ease-in-out pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(circle at center, rgba(10, 15, 30, 0.1) 0%, rgba(2, 4, 12, 0.95) 100%), url('/earthBg.jpg')",
+          transform: isAuthenticating 
+            ? "scale(2.2) rotate(120deg)" 
+            : "scale(1.0) rotate(0deg)",
+          filter: isAuthenticating 
+            ? "brightness(1.4) contrast(1.1)" 
+            : "brightness(1.0) contrast(1.0)",
+        }}
+      />
+
       {/* HUD Grid Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00d9ff03_1px,transparent_1px),linear-gradient(to_bottom,#00d9ff03_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none z-0" />
+      <div className={`absolute inset-0 bg-[linear-gradient(to_right,#00d9ff03_1px,transparent_1px),linear-gradient(to_bottom,#00d9ff03_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none z-0 transition-opacity duration-700 ${isAuthenticating ? "opacity-0" : "opacity-100"}`} />
 
       {/* Top Header Section */}
-      <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center text-center pointer-events-none z-10">
+      <div className={`absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center text-center pointer-events-none z-10 transition-all duration-700 ${isAuthenticating ? "opacity-0 scale-95" : "opacity-100"}`}>
         {/* Karnataka State Police Gold/Red Crest Emblem */}
         <svg className="w-16 h-16 drop-shadow-[0_0_12px_rgba(218,165,32,0.4)]" viewBox="0 0 100 100">
           <circle cx="50" cy="52" r="34" fill="none" stroke="#d4af37" strokeWidth="1.5" />
@@ -187,7 +194,7 @@ export function Login() {
       </div>
 
       {/* Top Left Status */}
-      <div className="absolute top-6 left-8 flex items-center gap-2 pointer-events-none z-10">
+      <div className={`absolute top-6 left-8 flex items-center gap-2 pointer-events-none z-10 transition-opacity duration-700 ${isAuthenticating ? "opacity-0" : "opacity-100"}`}>
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -199,7 +206,7 @@ export function Login() {
       </div>
 
       {/* Top Right Status */}
-      <div className="absolute top-6 right-8 flex items-center gap-2 pointer-events-none z-10 text-right">
+      <div className={`absolute top-6 right-8 flex items-center gap-2 pointer-events-none z-10 text-right transition-opacity duration-700 ${isAuthenticating ? "opacity-0" : "opacity-100"}`}>
         <div className="font-mono">
           <div className="text-[7.5px] text-slate-500 font-bold uppercase tracking-wider">System Status</div>
           <div className="text-[9px] text-emerald-400 uppercase tracking-widest font-black flex items-center justify-end gap-1">
@@ -210,58 +217,61 @@ export function Login() {
         </div>
       </div>
 
-      {/* Orbit Rings behind nodes */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none select-none z-0">
-        <ellipse 
-          cx="50%" 
-          cy="calc(50% + 50px)" 
-          rx="44vw" 
-          ry="32vh" 
-          fill="none" 
-          stroke="rgba(6, 182, 212, 0.12)" 
-          strokeWidth="1.5" 
-          strokeDasharray="6 4"
-        />
-        <ellipse 
-          cx="50%" 
-          cy="calc(50% + 50px)" 
-          rx="46vw" 
-          ry="34vh" 
-          fill="none" 
-          stroke="rgba(99, 102, 241, 0.06)" 
-          strokeWidth="1.2" 
-        />
-      </svg>
+      {/* Fading Orbit system wrapper */}
+      <div className={`absolute inset-0 pointer-events-none transition-all duration-[1000ms] ${isAuthenticating ? "opacity-0 scale-75" : "opacity-100"}`}>
+        {/* Orbit Rings behind nodes */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none select-none z-0">
+          <ellipse 
+            cx="50%" 
+            cy="calc(50% + 50px)" 
+            rx="44vw" 
+            ry="32vh" 
+            fill="none" 
+            stroke="rgba(6, 182, 212, 0.12)" 
+            strokeWidth="1.5" 
+            strokeDasharray="6 4"
+          />
+          <ellipse 
+            cx="50%" 
+            cy="calc(50% + 50px)" 
+            rx="46vw" 
+            ry="34vh" 
+            fill="none" 
+            stroke="rgba(99, 102, 241, 0.06)" 
+            strokeWidth="1.2" 
+          />
+        </svg>
 
-      {/* Revolving Orbit Nodes */}
-      {capabilities.map((cap, idx) => {
-        const Icon = cap.icon;
-        return (
-          <div
-            key={idx}
-            ref={(el) => { nodeRefs.current[idx] = el; }}
-            className="absolute p-2 rounded-xl border border-cyan-500/20 bg-slate-950/80 backdrop-blur-md flex items-center gap-2.5 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all duration-300 cursor-pointer w-44 select-none pointer-events-auto"
-            style={{
-              boxShadow: "0 4px 12px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)"
-            }}
-          >
-            <div className="h-7 w-7 rounded-lg border border-cyan-500/25 bg-cyan-950/20 flex items-center justify-center text-cyan-400">
-              <Icon className="h-4 w-4" />
-            </div>
-            <div className="text-left font-mono">
-              <div className="text-[10px] font-black text-white tracking-wide uppercase leading-tight">
-                {cap.line1}
+        {/* Revolving Orbit Nodes */}
+        {capabilities.map((cap, idx) => {
+          const Icon = cap.icon;
+          return (
+            <div
+              key={idx}
+              ref={(el) => { nodeRefs.current[idx] = el; }}
+              className="absolute p-2 rounded-xl border border-cyan-500/20 bg-slate-950/80 backdrop-blur-md flex items-center gap-2.5 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all duration-300 cursor-pointer w-44 select-none pointer-events-auto"
+              style={{
+                boxShadow: "0 4px 12px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)"
+              }}
+            >
+              <div className="h-7 w-7 rounded-lg border border-cyan-500/25 bg-cyan-950/20 flex items-center justify-center text-cyan-400">
+                <Icon className="h-4 w-4" />
               </div>
-              <div className="text-[8px] font-bold text-cyan-400/80 tracking-widest uppercase leading-none mt-0.5">
-                {cap.line2}
+              <div className="text-left font-mono">
+                <div className="text-[10px] font-black text-white tracking-wide uppercase leading-tight">
+                  {cap.line1}
+                </div>
+                <div className="text-[8px] font-bold text-cyan-400/80 tracking-widest uppercase leading-none mt-0.5">
+                  {cap.line2}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {/* Center Glassmorphic Card (zIndex = 10) */}
-      <main className="relative z-10 w-full max-w-md px-6">
+      <main className={`relative z-10 w-full max-w-md px-6 transition-all duration-700 ${isAuthenticating ? "opacity-0 scale-95 pointer-events-none" : "opacity-100"}`}>
         <div 
           className="rounded-3xl border border-white/10 bg-slate-950/75 p-9 backdrop-blur-xl space-y-6 relative overflow-hidden"
           style={{
@@ -370,7 +380,7 @@ export function Login() {
       </main>
 
       {/* Bottom Left Initializing Log Checklist */}
-      <div className="absolute bottom-8 left-8 flex flex-col gap-1.5 font-mono text-[9px] text-slate-500 pointer-events-none z-10 text-left">
+      <div className={`absolute bottom-8 left-8 flex flex-col gap-1.5 font-mono text-[9px] text-slate-500 pointer-events-none z-10 text-left transition-all duration-700 ${isAuthenticating ? "opacity-0" : "opacity-100"}`}>
         <div className="text-[10px] font-black text-white/50 tracking-wider mb-1">System Initializing...</div>
         <div className="flex items-center gap-1.5">
           <span className="text-emerald-400 font-bold">✓</span> Loading AI Models
@@ -393,7 +403,7 @@ export function Login() {
       </div>
 
       {/* Bottom Center Ticker */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none z-10">
+      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none z-10 transition-all duration-700 ${isAuthenticating ? "opacity-0" : "opacity-100"}`}>
         <div className="text-[8.5px] text-slate-500 uppercase tracking-widest">Command Access Gateway</div>
         {/* Progress dots bar */}
         <div className="flex items-center gap-2.5">
@@ -406,7 +416,7 @@ export function Login() {
       </div>
 
       {/* Global Footer Status Bar */}
-      <footer className="absolute bottom-3 left-0 right-0 px-8 flex items-center justify-between font-mono text-[9px] text-slate-600 pointer-events-none z-10">
+      <footer className={`absolute bottom-3 left-0 right-0 px-8 flex items-center justify-between font-mono text-[9px] text-slate-600 pointer-events-none z-10 transition-all duration-700 ${isAuthenticating ? "opacity-0" : "opacity-100"}`}>
         <div>IP SECURE: 117.197.XX.XX</div>
         <div className="flex items-center gap-1.5 uppercase font-bold text-[8.5px]">
           <Lock className="h-3 w-3 text-emerald-500" /> Encrypted Connection Established
