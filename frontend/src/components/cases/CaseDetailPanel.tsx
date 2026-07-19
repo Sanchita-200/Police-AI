@@ -38,8 +38,22 @@ export function CaseDetailPanel({ record, onClose }: CaseDetailPanelProps) {
   const [verifiedLedgers, setVerifiedLedgers] = useState<string[]>([]);
   const [isValidatingLedger, setIsValidatingLedger] = useState<string | null>(null);
 
+  // Tactical shortcuts states
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [isChargesheetModalOpen, setIsChargesheetModalOpen] = useState(false);
+  const [isCrossMatchModalOpen, setIsCrossMatchModalOpen] = useState(false);
+  const [assignedCommander, setAssignedCommander] = useState<string>("");
+  const [chargesheetSignStatus, setChargesheetSignStatus] = useState<"Draft" | "Filed">("Draft");
+  const [chargesheetNotes, setChargesheetNotes] = useState<string>("Based on prime evidence logs, CCTV facial profile index validation, and witness statement cross-verification, the accused Rohan Gupta has been charged under BNS Section 303 (Theft). Accused is currently in custody awaiting final court docket assignment.");
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (dossierData) {
+      setAssignedCommander(dossierData.overview.assignedOfficer || record.officer);
+    }
+  }, [dossierData, record.officer]);
 
   // Fetch complete dossier payload
   const fetchDossierData = async () => {
@@ -155,6 +169,33 @@ export function CaseDetailPanel({ record, onClose }: CaseDetailPanelProps) {
 
     setNewNoteTitle("");
     setNewNoteContent("");
+  };
+
+  const confirmReassignment = (officerName: string) => {
+    setAssignedCommander(officerName);
+    setDossierData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        overview: {
+          ...prev.overview,
+          assignedOfficer: officerName,
+        },
+        activityLog: [
+          {
+            user: officerName,
+            action: `Case Commander Re-assigned to ${officerName}`,
+            date: new Date().toISOString().split("T")[0],
+            time: new Date().toTimeString().split(" ")[0].slice(0, 5),
+            ip: "127.0.0.1",
+            device: "Console Terminal",
+            role: "System Action"
+          },
+          ...prev.activityLog
+        ]
+      };
+    });
+    setIsReassignModalOpen(false);
   };
 
   // Custom PDF Print Action
@@ -1173,9 +1214,7 @@ export function CaseDetailPanel({ record, onClose }: CaseDetailPanelProps) {
             
             <div className="space-y-2">
               <button 
-                onClick={() => {
-                  alert(`Re-assigning case officer for ${overview.firNumber}`);
-                }}
+                onClick={() => setIsReassignModalOpen(true)}
                 className="w-full flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] text-xs font-semibold text-slate-300 transition-all text-left"
               >
                 <span>Re-assign Commander</span>
@@ -1183,9 +1222,7 @@ export function CaseDetailPanel({ record, onClose }: CaseDetailPanelProps) {
               </button>
 
               <button 
-                onClick={() => {
-                  alert(`Generating legal chargesheet draft for ${overview.firNumber}`);
-                }}
+                onClick={() => setIsChargesheetModalOpen(true)}
                 className="w-full flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] text-xs font-semibold text-slate-300 transition-all text-left"
               >
                 <span>Chargesheet Compiler</span>
@@ -1193,9 +1230,7 @@ export function CaseDetailPanel({ record, onClose }: CaseDetailPanelProps) {
               </button>
 
               <button 
-                onClick={() => {
-                  alert(`Accessing related cases for ${overview.firNumber}`);
-                }}
+                onClick={() => setIsCrossMatchModalOpen(true)}
                 className="w-full flex items-center justify-between p-2.5 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] text-xs font-semibold text-slate-300 transition-all text-left"
               >
                 <span>Cross-match Matrices</span>
@@ -1222,6 +1257,258 @@ export function CaseDetailPanel({ record, onClose }: CaseDetailPanelProps) {
         </div>
 
       </GlassCard>
+
+      {/* 1. RE-ASSIGN COMMANDER MODAL */}
+      {isReassignModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <GlassCard className="w-full max-w-md border-white/10 shadow-glow overflow-hidden bg-navy-950 p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-cyan-accent">
+                <Users className="h-5 w-5" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-white">Re-assign Lead Commander</h3>
+              </div>
+              <button 
+                onClick={() => setIsReassignModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs text-slate-400 font-mono">
+                Select an active supervising officer to re-assign lead case ownership for file <span className="text-cyan-accent">{overview.firNumber}</span>.
+              </p>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {[
+                  { name: "SI Ananya Reddy", unit: "Cyber Crime Unit", activeCases: 14, badge: "KSP-1042" },
+                  { name: "Insp. Vikram Singh", unit: "Economic Offences Wing", activeCases: 8, badge: "KSP-0892" },
+                  { name: "SI Priya Sen", unit: "Narcotics Cell", activeCases: 11, badge: "KSP-1205" },
+                  { name: "SI Amit Kumar", unit: "Indiranagar PS", activeCases: 19, badge: "KSP-1390" }
+                ].map((officer) => (
+                  <button
+                    key={officer.name}
+                    type="button"
+                    onClick={() => confirmReassignment(officer.name)}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left font-mono ${
+                      assignedCommander === officer.name 
+                        ? "border-cyan-500 bg-cyan-950/20 text-white" 
+                        : "border-white/5 bg-white/[0.01] hover:bg-white/[0.03] text-slate-300"
+                    }`}
+                  >
+                    <div>
+                      <div className="text-xs font-bold">{officer.name}</div>
+                      <div className="text-[9px] text-slate-500 mt-0.5">{officer.unit} • {officer.badge}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[9px] font-bold text-cyan-accent">{officer.activeCases} Active Cases</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* 2. CHARGESHEET COMPILER MODAL */}
+      {isChargesheetModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <GlassCard className="w-full max-w-2xl border-white/10 shadow-glow overflow-hidden bg-navy-950 p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-cyan-accent">
+                <FileText className="h-5 w-5" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-white">Chargesheet Compiler Console</h3>
+              </div>
+              <button 
+                onClick={() => setIsChargesheetModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 font-mono text-xs text-slate-300">
+              <div className="p-4 rounded-xl border border-white/5 bg-black/40 space-y-3">
+                <div className="text-center font-bold border-b border-white/10 pb-2 text-[11px] text-slate-400">
+                  POLICE REPORT (Under Section 173 Cr.P.C)<br/>
+                  STATE OF KARNATAKA vs. ACCUSED SUSPECT
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-[10px]">
+                  <div>FIR Reference: <span className="text-white">{overview.firNumber}</span></div>
+                  <div>Jurisdiction Unit: <span className="text-white">{overview.policeStation}</span></div>
+                  <div>Accused Name: <span className="text-white">{suspect.name}</span></div>
+                  <div>Applicable Laws: <span className="text-white">{legal.applicableLaws}</span></div>
+                  <div className="col-span-2">IPC/BNS Sections Mapped: <span className="text-rose-400 font-bold">{legal.ipcSections}</span></div>
+                </div>
+
+                <div className="space-y-1.5 border-t border-white/5 pt-2 text-[9px]">
+                  <div className="font-bold text-slate-500 uppercase tracking-wider">Indexed Forensic Evidence Links:</div>
+                  {evidence.map((ev: any) => (
+                    <div key={ev.id} className="flex items-center gap-1.5 text-emerald-400">
+                      <CheckCircle className="h-3 w-3 shrink-0" />
+                      <span>{ev.id} ({ev.type}) - Hash verified: SHA-256 Custody Secured</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[9px] uppercase font-bold text-slate-500">Accusal Legal Statement / Narrative Draft</label>
+                <textarea
+                  rows={4}
+                  value={chargesheetNotes}
+                  onChange={(e) => setChargesheetNotes(e.target.value)}
+                  className="w-full bg-navy-900 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-accent/40 resize-none font-mono text-[11px] leading-relaxed"
+                />
+              </div>
+
+              <div className="flex justify-between border-t border-white/5 pt-4">
+                <div className="text-[10px] flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full inline-block ${chargesheetSignStatus === "Filed" ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
+                  <span>Dossier Stage: <span className="font-bold uppercase">{chargesheetSignStatus === "Filed" ? "Chargesheet Filed" : "Draft Stages"}</span></span>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      window.print();
+                    }}
+                    className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 transition-all flex items-center gap-1"
+                  >
+                    <Printer className="h-4 w-4" /> Print Copy
+                  </button>
+                  {chargesheetSignStatus !== "Filed" ? (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setChargesheetSignStatus("Filed");
+                        setDossierData((prev: any) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            overview: {
+                              ...prev.overview,
+                              investigationStage: "Chargesheet Filed",
+                              currentStatus: "Secured"
+                            },
+                            activityLog: [
+                              {
+                                user: assignedCommander,
+                                action: "Chargesheet Filed & Registered in CCTNS Registry",
+                                date: new Date().toISOString().split("T")[0],
+                                time: new Date().toTimeString().split(" ")[0].slice(0, 5),
+                                ip: "127.0.0.1",
+                                device: "Console Terminal",
+                                role: "Lead Commander"
+                              },
+                              ...prev.activityLog
+                            ]
+                          };
+                        });
+                      }}
+                      className="px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all flex items-center gap-1"
+                    >
+                      <Lock className="h-4 w-4" /> Approve & Sign Report
+                    </button>
+                  ) : (
+                    <span className="text-emerald-400 font-bold flex items-center gap-1 border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 rounded-lg">
+                      <CheckCircle className="h-4 w-4" /> Digitally Signed
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* 3. CROSS-MATCH MATRICES MODAL */}
+      {isCrossMatchModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <GlassCard className="w-full max-w-3xl border-white/10 shadow-glow overflow-hidden bg-navy-950 p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-cyan-accent">
+                <Network className="h-5 w-5" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-white">AI Case Cross-Match Similarity Matrix</h3>
+              </div>
+              <button 
+                onClick={() => setIsCrossMatchModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 font-mono text-xs text-slate-300">
+              <p className="text-xs text-slate-400 leading-normal">
+                Cross-checking Modus Operandi (MO) and suspect variable matrices across the national crime registry database. Identified high semantic affinity with matching files.
+              </p>
+
+              <div className="overflow-x-auto border border-white/5 rounded-xl bg-black/40">
+                <table className="w-full text-[11px] text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-slate-500 uppercase text-[9px] pb-1 bg-white/[0.02]">
+                      <th className="p-3">Matched Case</th>
+                      <th className="p-3">Modus Operandi</th>
+                      <th className="p-3">Accused Suspect</th>
+                      <th className="p-3">Spatial Cluster</th>
+                      <th className="p-3">Match Index</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-white/5 text-slate-200">
+                      <td className="p-3 font-bold text-cyan-accent">{overview.firNumber} (Target)</td>
+                      <td className="p-3">Duplicate key ignition</td>
+                      <td className="p-3">{suspect.name}</td>
+                      <td className="p-3">Sector-V Salt Lake</td>
+                      <td className="p-3 font-bold text-white">100%</td>
+                    </tr>
+                    <tr className="border-b border-white/5 text-slate-300">
+                      <td className="p-3 font-bold text-cyan-accent">FIR/2026/A1019</td>
+                      <td className="p-3">Duplicate key ignition</td>
+                      <td className="p-3">Rohan Gupta (Wanted)</td>
+                      <td className="p-3">Sector-V Salt Lake</td>
+                      <td className="p-3 font-bold text-rose-400">88% (Critical)</td>
+                    </tr>
+                    <tr className="border-b border-white/5 text-slate-300">
+                      <td className="p-3 font-bold text-cyan-accent">FIR-2024-0041</td>
+                      <td className="p-3">Device MAC spoof phishing</td>
+                      <td className="p-3">Rohit Verma</td>
+                      <td className="p-3">Koramangala Tech Hub</td>
+                      <td className="p-3 font-bold text-amber-400">64% (Medium)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-white/5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    alert("Linked intelligence files mapped successfully.");
+                    setIsCrossMatchModalOpen(false);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-cyan-accent/15 border border-cyan-accent/30 text-cyan-accent font-bold hover:bg-cyan-accent/25 transition-all"
+                >
+                  Link Case Intelligence
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    alert("Suspect aliases merged across cross-match matrices.");
+                    setIsCrossMatchModalOpen(false);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold hover:bg-emerald-500/25 transition-all"
+                >
+                  Merge Suspect Profile
+                </button>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
     </div>
   );
 }
